@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-use std::{fs, println};
+use std::{dbg, fs, println, sync::Arc};
+use tokio::sync::RwLock;
+use tokio::task::JoinSet;
 
 pub mod github;
 
@@ -51,11 +53,15 @@ fn read_config(file_path: &str) -> Result<Config, Box<dyn Error>> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut state = read_state_file("state.json").expect("Failed to read state file");
+    let state = read_state_file("state.json").expect("Failed to read state file");
+    let state = Arc::new(RwLock::new(state));
 
     let config = read_config("config.json").expect("Failed to read config");
+    let config = Arc::new(config);
 
     dbg!(&config);
+
+    let tasks: JoinSet<()> = JoinSet::new();
 
     for line in &config.watch_list {
         let (release_type, release_name) = line
@@ -63,17 +69,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .expect("String split failed. Remember to follow the pattern <type> <name>");
 
         match release_type {
-            "github" => github::handle_release_github(&config, &mut state, release_name)
-                .await
-                .expect("Failed to handle GitHub release"),
+            "github" => {
+                let config_clone = Arc::clone(&config);
+                let state_clone = Arc::clone(&state);
+                let release_name = release_name.to_string();
+                github::handle_release_github(config_clone, state_clone, release_name)
+                    .await
+                    .expect("Failed to handle GitHub release");
+            }
             _ => println!("Unknown release type: {}", release_type),
         }
     }
+    tasks.join_all().await;
 
-    dbg!("Final state: {:?}", &state);
+    let final_state = state.read().await;
 
-    fs::write("state.json", serde_json::to_string_pretty(&state).unwrap())
-        .expect("Unable to write state file");
+    dbg!("Final state: {:?}", &final_state);
+
+    fs::write(
+        "state.json",
+        serde_json::to_string_pretty(&*final_state).unwrap(),
+    )
+    .expect("Unable to write state file");
     Ok(())
 }
 
