@@ -26,3 +26,10 @@ own crontab.
 > If it's sloppy or not up to standards. I am sorry not sorry. This is my Sloppy
 
 > To be perfectly clear. I did not use AI in any code for this project. Not in the rust code neither in the README. I do not ostracize the usage of AI. But for My personal Learning of this language i decided strictly against using it.
+
+I am writing this, just as i finished the Update for the Program to work async and ask for every github release in parallel.
+My Verdict. Async Rust is pretty hard it took me a whole day to figure out what Arcs and Mutexes do how they integrate in the tokio ecosystem
+And what specialty RwLock's serve. Pretty hard ngl. But i think my next async Rust app will now go somewhat easier from the hand.
+Maybe instead of one and a half day just one day. All in the name of improvements am i right? Please let me be right.
+
+- Signed. A Pretty tired and defeated Developer That tried to learn async Rust
