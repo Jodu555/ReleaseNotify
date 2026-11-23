@@ -61,7 +61,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     dbg!(&config);
 
-    let tasks: JoinSet<()> = JoinSet::new();
+    let mut tasks: tokio::task::JoinSet<Result<(), Box<dyn Error + Send + Sync>>> =
+        tokio::task::JoinSet::new();
 
     for line in &config.watch_list {
         let (release_type, release_name) = line
@@ -80,7 +81,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             _ => println!("Unknown release type: {}", release_type),
         }
     }
-    tasks.join_all().await;
+    for result in tasks.join_all().await {
+        result.expect("Task results to succeed ?");
+    }
 
     let final_state = state.read().await;
 
