@@ -13,6 +13,16 @@ pub struct Config {
     watch_list: Vec<String>,
 }
 
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            gotify_url: "https://gotify.example.com/".to_string(),
+            gotify_token: "YOUT_GOTIFY_TOKEN_HERE".to_string(),
+            watch_list: Vec::new(),
+        }
+    }
+}
+
 fn read_state_file(file_path: &str) -> Result<serde_json::Value, Box<dyn Error>> {
     let result = fs::exists(file_path).expect("Failed to check if file exists");
     if !result {
@@ -33,11 +43,7 @@ fn read_state_file(file_path: &str) -> Result<serde_json::Value, Box<dyn Error>>
 fn read_config(file_path: &str) -> Result<Config, Box<dyn Error>> {
     let result = fs::exists(file_path).expect("Failed to check if file exists");
     if !result {
-        let default_config = Config {
-            gotify_url: "https://gotify.example.com/".to_string(),
-            gotify_token: "YOUT_GOTIFY_TOKEN_HERE".to_string(),
-            watch_list: Vec::new(),
-        };
+        let default_config = Config::default();
         println!("Creating config file...");
         let config_json_str =
             serde_json::to_string_pretty(&default_config).expect("default config to json failed");
@@ -61,8 +67,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     dbg!(&config);
 
-    let mut tasks: tokio::task::JoinSet<Result<(), Box<dyn Error + Send + Sync>>> =
-        tokio::task::JoinSet::new();
+    let tasks: JoinSet<Result<(), Box<dyn Error + Send + Sync>>> = JoinSet::new();
 
     for line in &config.watch_list {
         let (release_type, release_name) = line
