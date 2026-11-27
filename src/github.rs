@@ -22,20 +22,18 @@ pub async fn handle_release_github(
     let link = &latest_item.links.get(0);
 
     let title = &latest_item.title;
+    let title_text: String;
+    if let Some(title) = title {
+        title_text = format!("{}\n", title.content)
+    } else {
+        title_text = "".to_string();
+    }
 
     let message: String;
     if let Some(link) = link {
-        if let Some(title) = title {
-            message = format!("{}\n{}", title.content, link.href)
-        } else {
-            message = format!("{}", link.href)
-        }
+        message = format!("{}{}", title_text, link.href)
     } else {
-        if let Some(title) = title {
-            message = format!("{}\nhttps://github.com/{}", title.content, &release_name)
-        } else {
-            message = format!("https://github.com/{}", &release_name)
-        }
+        message = format!("{}https://github.com/{}", title_text, &release_name)
     }
 
     misc::debrief_handle_release(
