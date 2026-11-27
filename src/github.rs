@@ -21,11 +21,21 @@ pub async fn handle_release_github(
 
     let link = &latest_item.links.get(0);
 
+    let title = &latest_item.title;
+
     let message: String;
     if let Some(link) = link {
-        message = link.href.to_owned();
+        if let Some(title) = title {
+            message = format!("{}\n{}", title.content, link.href)
+        } else {
+            message = format!("{}", link.href)
+        }
     } else {
-        message = format!("https://github.com/{}", &release_name)
+        if let Some(title) = title {
+            message = format!("{}\nhttps://github.com/{}", title.content, &release_name)
+        } else {
+            message = format!("https://github.com/{}", &release_name)
+        }
     }
 
     misc::debrief_handle_release(
