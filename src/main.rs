@@ -66,39 +66,45 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = Arc::new(config);
 
     dbg!(&config);
-
-    let tasks: JoinSet<Result<(), Box<dyn Error + Send + Sync>>> = JoinSet::new();
-
-    for line in &config.watch_list {
-        let (release_type, release_name) = line
-            .split_once(" ")
-            .expect("String split failed. Remember to follow the pattern <type> <name>");
-
-        match release_type {
-            "github" => {
-                let config_clone = Arc::clone(&config);
-                let state_clone = Arc::clone(&state);
-                let release_name = release_name.to_string();
-                github::handle_release_github(config_clone, state_clone, release_name)
-                    .await
-                    .expect("Failed to handle GitHub release");
-            }
-            _ => println!("Unknown release type: {}", release_type),
-        }
-    }
-    for result in tasks.join_all().await {
-        result.expect("Task results to succeed ?");
-    }
-
-    let final_state = state.read().await;
-
-    dbg!("Final state: {:?}", &final_state);
-
-    fs::write(
-        "state.json",
-        serde_json::to_string_pretty(&*final_state).unwrap(),
+    github::handle_release_github(
+        Arc::clone(&config),
+        Arc::clone(&state),
+        "immich-app/immich".to_string(),
     )
-    .expect("Unable to write state file");
+    .await;
+
+    // let tasks: JoinSet<Result<(), Box<dyn Error + Send + Sync>>> = JoinSet::new();
+
+    // for line in &config.watch_list {
+    //     let (release_type, release_name) = line
+    //         .split_once(" ")
+    //         .expect("String split failed. Remember to follow the pattern <type> <name>");
+
+    //     match release_type {
+    //         "github" => {
+    //             let config_clone = Arc::clone(&config);
+    //             let state_clone = Arc::clone(&state);
+    //             let release_name = release_name.to_string();
+    //             github::handle_release_github(config_clone, state_clone, release_name)
+    //                 .await
+    //                 .expect("Failed to handle GitHub release");
+    //         }
+    //         _ => println!("Unknown release type: {}", release_type),
+    //     }
+    // }
+    // for result in tasks.join_all().await {
+    //     result.expect("Task results to succeed ?");
+    // }
+
+    // let final_state = state.read().await;
+
+    // dbg!("Final state: {:?}", &final_state);
+
+    // fs::write(
+    //     "state.json",
+    //     serde_json::to_string_pretty(&*final_state).unwrap(),
+    // )
+    // .expect("Unable to write state file");
     Ok(())
 }
 
